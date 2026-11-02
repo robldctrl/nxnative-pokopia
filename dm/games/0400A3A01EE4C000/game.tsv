@@ -1,0 +1,48 @@
+# Pokémon Pokopia (Koei Tecmo KTGL engine, Switch 2 / NVN2), update 1.0.4 (v327680). Started from the NSP script's provisional profile and brought up on the Mac:
+# boots, plays through the opening into the first area at 60 fps. Build: scripts/build_ipa_from_nsp.py <dump folder> --platform mac-app --gpu none
+
+# ---- Identity ----
+title_id	0400A3A01EE4C000
+program_id	0400A3A01EE4C000
+
+# ---- App ----
+name	0400A3A01EE4C000
+ipa	0400a3a01ee4c000.ipa
+app_category	public.app-category.games
+
+# ---- Versions ----
+build	v327680	?	main=816c5358e8178d802fcec4a7ce5a741a	subsdk0=9646a69cb1024ba919fddaa4265e6bc5	sdk=cc7da00d672399efe7958790d17fae39
+package	v327680
+shader_versions	v327680
+
+# ---- Files ----
+# every module main imports from
+modules	main subsdk0 sdk
+romfs_marker	motor_asset_re/KIDS_PLATFORM_OUNCE/0x38f972af.fdata
+zip_store	.bin:.fdata:.file:.rdb:.webm:.metallib
+
+# ---- Memory ----
+# Switch 2: games get 9 GB of the 12 GB (as Donkey Kong Bananza's profile). Pokopia's engine allocates a 5.2 GB block at start (main+0x1040240: aligned_alloc 0x135c07008), which the guessed 3.25 GB heap refused, and nnMain returned at once
+# main sets a heap of at most the pool − 64 MB: a 3328 MB heap region
+mem_reserve	0x270000000
+mem_alias	0x10000000
+mem_stack	0x10000000
+app_pool	0x240000000
+# the NPDM declares 0 MB of system resource: IsVirtualAddressMemoryEnabled is false, as on Horizon (Big Brain Academy: Brain vs. Brain sets a heap only then)
+sys_resource	0x0
+
+# ---- Shader split ----
+shader_groups	/motor_asset_re/=motorassetre /movie_asset/=movieasset
+shader_note	0400A3A01EE4C000 shaders (provisional profile)
+
+# ---- After the rewrite ----
+# used memory for the current rewritten modules, at least the default 64 MB
+mem_used	0x5600000
+
+# KTGL rewrites control section +0x20..+0x27 when it loads a shader (its G2S files hold other values there): masked in the key (shader_split.py key_ctl, hle_nvn.c keys_hash)
+shader_key_skip	0x20+0x8
+
+# ---- Run-time shaders ----
+# 72 programs are built at run time from code no game file holds as stored (the language menu among them): each build boots the game once with DM_NVN_SHDUMP
+# and these DM_KEYS steps (English, the intro, the trainer, the character creator, the first area) to capture them from the user's own copy (build_ipa_from_nsp.py capture_shader_dumps)
+shader_dumps_keys	70:A~0.4,73:Up~0.3,75:A~0.4,95:A~0.4*8/4,128:LLeft~0.4,130:A~0.4,134:A~0.4*10/4,176:Plus~0.4,180:A~0.4*10/4,225:LUp~3,230:LLeft~2,236:LUp~3,242:LRight~3,250:X~0.4,256:B~0.4,262:LDown~3,268:LUp~3

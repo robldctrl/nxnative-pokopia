@@ -1,0 +1,18 @@
+# Pokopia: texture slots whose bound type the answer table lacked (from the host's texture type mismatch reports): KTGL buffer textures read by 1D fetches; a slot bound as both a 2D texture and a buffer is 2D (the host binds a buffer there as rows, nvn_mtl.m tbuf_as_2d)
+04c0a0e23ef441fd	{"tex": {"16": "buffer", "17": "buffer", "18": "buffer", "19": "buffer", "20": "buffer", "21": "buffer", "25": "buffer"}}
+22be637fbb2a7d58	{"tex": {"3": "2d"}}
+3b28c6098115d301	{"tex": {"16": "buffer", "17": "buffer", "18": "buffer", "19": "buffer", "20": "buffer", "21": "buffer"}}
+3c36123c3137c3a7	{"tex": {"0": "buffer", "1": "buffer"}}
+477a225eb11d7899	{"tex": {"3": "2d"}}
+661f8c796ad8f483	{"tex": {"16": "buffer", "17": "buffer", "18": "buffer", "19": "buffer", "20": "buffer", "21": "buffer", "25": "buffer"}}
+67f0d22a781f1c14	{"tex": {"16": "buffer", "17": "buffer", "18": "buffer", "19": "buffer", "20": "buffer", "21": "buffer"}}
+6a0b8fdf4860d0c9	{"tex": {"16": "buffer", "17": "buffer", "18": "buffer", "19": "buffer", "20": "buffer", "21": "buffer"}}
+87aec1f5d55b269f	{"tex": {"0": "buffer", "1": "buffer", "2": "buffer"}}
+90fc19bac6771ec4	{"tex": {"16": "buffer", "17": "buffer", "18": "buffer", "19": "buffer", "20": "buffer", "21": "buffer"}}
+94b8a61307894ef8	{"tex": {"0": "buffer", "1": "buffer", "2": "buffer", "3": "2d"}}
+ac97479da451952b	{"tex": {"0": "buffer"}}
+b7bc878c7cd6fb8f	{"tex": {"16": "buffer", "17": "buffer", "18": "buffer", "19": "buffer", "20": "buffer", "21": "buffer"}}
+c3d11caba2e0e8cd	{"tex": {"16": "buffer", "17": "buffer", "18": "buffer", "19": "buffer", "20": "buffer", "21": "buffer"}}
+ccee93455ffa006f	{"tex": {"0": "buffer", "1": "buffer", "2": "buffer", "3": "2d"}}
+dc7e617a3d0b1edc	{"tex": {"16": "buffer", "17": "buffer", "18": "buffer", "19": "buffer", "20": "buffer", "21": "buffer", "25": "buffer"}}
+f4206d927128ea27	{"tex": {"16": "buffer", "17": "buffer", "18": "buffer", "19": "buffer", "20": "buffer", "21": "buffer"}}
