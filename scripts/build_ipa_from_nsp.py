@@ -2066,6 +2066,10 @@ def build_shaders(py, repo, sh, xlate, env, logs, g, pkg_key=None, mac=False):
     sk = os.environ.get('DM_SHADER_KEYS')
     if not sk and g.table('shader_keys.txt').exists(): sk = str(g.table('shader_keys.txt'))   # the profile's subset (Pokémon Pokopia: the 6,000 of its 99,000 shaders it was seen to load; the full set takes about 70 GB)
     keys = [l.split()[0].removesuffix('_b') for l in open(sk) if l.strip() and not l.startswith('#')] if sk else []
+    if keys and g.table('shader_map.tsv').is_file():   # a key list from another run may name shaders this build's map lacks (run-time ones not captured yet): left out
+        mapped = {l.split('\t')[3] for l in open(g.table('shader_map.tsv'), errors='replace') if l.count('\t') >= 4 and not l.startswith(('#', 'package'))}
+        n0 = len(keys); keys = [k for k in keys if k in mapped]
+        if len(keys) < n0: say(f'shader subset: {n0 - len(keys)} of its {n0} keys are not in this build\'s shader map, left out')
     if sk: say(f'shader subset (DM_SHADER_KEYS): {len(keys)} keys from {sk}')
     if sk and not keys: say('shader subset is empty: no shaders built (run the game to list the ones it needs)'); (sh / 'cache' / f'b-{chain}').mkdir(parents=True, exist_ok=True); log.write_text('')
     else: run([py, repo / 'dm/gfx/tools/own_compilers.py', sh / 'pkg', sh / 'cache', *keys], log, env=benv)
