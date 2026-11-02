@@ -3684,6 +3684,20 @@ static void warm_start(void);
 static void shmap_read_once(void) { static dispatch_once_t once; dispatch_once(&once, ^{ shmap_read(); }); }
 // That, then the prewarm (warm_start) once: the submit thread and the tools only. The flag is set before warm_start runs, so a call from inside it (pso_prebuild) returns at
 // once; inside the dispatch_once that call re-entered it and libdispatch aborted (Tears of the Kingdom and Pokémon Scarlet at boot, chain d0e99bd4b2fe)
+// Where shaders missing from the map are saved (<key>.ctl / <key>.code): DM_NVN_SHDUMP, else ~/Library/Application Support/nxnative/<title ID>/shader_dumps on the Mac, so a game's
+// run-time-built shaders (Pokémon Pokopia) are kept while it is played and the next build takes them (build_ipa_from_nsp.py capture_shader_dumps); DM_NVN_SHDUMP=0 turns it off
+const char *nvn_shdump_dir(void) {
+    static const char *d; static int init;
+    if (!init) { init = 1; const char *e = getenv("DM_NVN_SHDUMP");
+        if (e) d = strcmp(e, "0") ? e : NULL;
+#if TARGET_OS_OSX
+        else d = strdup([NSString stringWithFormat:@"%@/Library/Application Support/nxnative/%s/shader_dumps", NSHomeDirectory(), DM_GAME_ID].UTF8String);
+#endif
+        if (d) [NSFileManager.defaultManager createDirectoryAtPath:@(d) withIntermediateDirectories:YES attributes:nil error:nil]; }
+    return d;
+}
+// Whether a shader key (16 hex digits) is in the map: hle_nvn.c keeps a copy of the control section only for those that are not (they are saved at their first use)
+int nvn_shader_mapped(const char *key) { shmap_read_once(); return g_shmap[@(key)] != nil; }
 static void shmap_load(void) { shmap_read_once(); static int warmed; if (!warmed) { warmed = 1; warm_start(); } }
 static void shmap_read(void) {
     if (g_shmap) return;
@@ -4149,7 +4163,7 @@ static __unsafe_unretained NvProg *prog_get(const prog_t *cp) {   // Called only
             if (b) { o->sh[5] = b; continue; }
             MLOG("[RED] shader %s is not in the shader map (DM_NVN_SHDUMP=directory saves its control section and code area)", k.UTF8String);
             // DM_NVN_SHDUMP=directory: shaders missing from the map are saved as <key>.ctl (the control section's key bytes) and <key>.code (code area, nvn_ctl_lens), to trace their source / add them to the map offline
-            static const char *shd; static int shd_init; if (!shd_init) { shd = getenv("DM_NVN_SHDUMP"); shd_init = 1; if (shd && *shd) mkdir(shd, 0777); }   // create the dump folder: a missing one made every fopen fail silently
+            const char *nvn_shdump_dir(void); const char *shd = nvn_shdump_dir();
             if (shd) { char path[1024]; FILE *f; uint32_t ncode, nctl; nvn_ctl_lens(p->sd[i].control, &nctl, &ncode);   // with SHDUMP set the control section is the host's copy
                 snprintf(path, sizeof path, "%s/%s.ctl", shd, k.UTF8String); if ((f = fopen(path, "wb"))) { fwrite(p->sd[i].control, 1, nctl < 0x100 ? 0x100 : nctl, f); fclose(f); }
                 snprintf(path, sizeof path, "%s/%s.code", shd, k.UTF8String);

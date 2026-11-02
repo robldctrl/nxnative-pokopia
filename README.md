@@ -16,7 +16,7 @@ A fork of nxnative by seedds (MIT licence, © 2026 seedds) that runs **Pokémon 
 python3 scripts/build_ipa_from_nsp.py "<your Pokopia dump folder>" --platform mac-app --gpu none
 ```
 
-The dump folder holds the game and its update (`base/`, `updates/327680/`). The first build takes about an hour (shader translation) and boots the game hidden once to capture its run-time shaders. The app is written next to the dump.
+The dump folder holds the game and its update (`base/`, `updates/327680/`). The first build takes about an hour (shader translation) and boots the game hidden once to capture its run-time shaders. Shaders it misses are saved while you play (`~/Library/Application Support/nxnative/0400A3A01EE4C000/shader_dumps`); build again afterwards to include them. The app is written next to the dump.
 
 ---
 

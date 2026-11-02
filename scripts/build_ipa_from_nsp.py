@@ -1391,7 +1391,15 @@ def capture_shader_dumps(repo, dirs, pkg_ver, patched, work, env, logs, g):
     shader_dumps_keys (DM_KEYS steps) plays through the screens that build them; the run stops once every dump the profile's map names is there. Nothing from the game is kept in the
     source tree: each build makes its own dumps from the user's copy"""
     want = shdump_wanted(g)
-    todo = [v for v, d in dirs.items() if not (want and shdump_done(d / 'shader_dumps') >= want)]
+    # dumps the app saved while the game was played (nvn_mtl.m: ~/Library/Application Support/nxnative/<title ID>/shader_dumps) join the version's own
+    played = Path.home() / 'Library/Application Support/nxnative' / g.id / 'shader_dumps'
+    for d in dirs.values():
+        if played.is_dir():
+            (d / 'shader_dumps').mkdir(parents=True, exist_ok=True)
+            for f in shdump_done(played):
+                for x in ('.ctl', '.code'):
+                    if not (d / 'shader_dumps' / (f + x)).exists(): shutil.copy2(played / (f + x), d / 'shader_dumps' / (f + x))
+    todo = [v for v, d in dirs.items() if not (want and shdump_done(d / 'shader_dumps') >= want) and not (not want and shdump_done(d / 'shader_dumps'))]
     PROG.stage('run-time shader capture')
     if not todo:
         say(f'reusing the captured run-time shaders: {", ".join(str(d / "shader_dumps") for d in dirs.values())}')
@@ -1404,7 +1412,11 @@ def capture_shader_dumps(repo, dirs, pkg_ver, patched, work, env, logs, g):
     for f in shdump_done(d / 'shader_dumps'):   # an earlier, partial capture's dumps are kept
         for x in ('.ctl', '.code'): shutil.copy2(d / 'shader_dumps' / (f + x), cap / (f + x))
     for s_ in ('save', 'temp'): (rd / s_).mkdir(parents=True)
-    henv = dict(env, DM_ROMFS=str(rfs.source(d)), DM_SAVE=str(rd / 'save'), DM_TEMP=str(rd / 'temp'), DM_MSL_DIR=str(rd / 'msl'), DM_NVN_SHMAP=str(g.table('shader_map.tsv')),
+    # the host saves only a shader its map lacks: the run's map leaves out the rows made from dumps
+    shmap = rd / 'shader_map.tsv'
+    src = g.table('shader_map.tsv')   # none yet on a first build: an empty map, every shader is saved
+    shmap.write_text(''.join(l for l in open(src, errors='replace') if '/shader_dumps/' not in l) if src.is_file() else 'package\tindex\tstage\tdm_ctl_sha16\tsource\n')
+    henv = dict(env, DM_ROMFS=str(rfs.source(d)), DM_SAVE=str(rd / 'save'), DM_TEMP=str(rd / 'temp'), DM_MSL_DIR=str(rd / 'msl'), DM_NVN_SHMAP=str(shmap),
                 DM_NVN_SHDUMP=str(cap), DM_KEYS=g.get('shader_dumps_keys') or '')
     PROG.set(step='playing the opening', done=0, total=len(want) if want else None, unit='shaders')
     say(f'booting the game in the Mac host to capture the shaders it builds at run time → {d / "shader_dumps"}')
@@ -2511,6 +2523,9 @@ def main(args=None):
         if not shutil.which('dotnet', path=env['PATH']): raise BuildError('dotnet not found (.NET SDK 10)')
         pdir = profile_folder(args, nsp_dir, app)
         if not (args.survey_only or SURVEY_ONLY): rmtree(derived_key(pdir / f'{app:016X}'))
+        seed = repo / 'dm/games_seed' / f'{app:016X}'   # a hand-made starting profile (Pokémon Pokopia): copied in once, then built on like a provisional one (the shader tables come from this build)
+        if seed.is_dir() and not (pdir / f'{app:016X}' / 'game.tsv').exists() and not (args.survey_only or SURVEY_ONLY):
+            shutil.copytree(seed, pdir / f'{app:016X}', dirs_exist_ok=True); say(f'game profile: starting from {seed}')
         if (pdir / f'{app:016X}' / 'game.tsv').exists() and not (args.survey_only or SURVEY_ONLY):
             say(f'no game profile for {app:016X}: reusing the provisional profile from the last run (delete it to survey again)')
         else:
@@ -2644,7 +2659,7 @@ def main(args=None):
         if HEAP_CHECK and not args.no_heap_check and pg.has_va(game / 'ExeFS') and not region_checked(g, patched) and apple_silicon():   # where its address regions reach (a derived build too: the registered builds' cuts do not reach it)
             PROG.add(1); g = region_check(repo, game, patched, work, env, logs, g)
     if glslc: capture_glslc(repo, {v: dirs[v] for v in sv}, pkg_ver, patched, work, env, logs, g)
-    if g.get('shader_dumps_keys') and shdump_wanted(g) and apple_silicon(): capture_shader_dumps(repo, {v: dirs[v] for v in sv}, pkg_ver, patched, work, env, logs, g)
+    if g.get('shader_dumps_keys') and apple_silicon(): capture_shader_dumps(repo, {v: dirs[v] for v in sv}, pkg_ver, patched, work, env, logs, g)
     if uedec: decode_ue_shaders(repo, {v: dirs[v] for v in sv}, pkg_ver, patched, work, env, logs, g)
     sh = work / 'shader'
     if gfx == 'vulkan':   # the packed version's merged RomFS holds the SPIR-V files the game loads; a capture holds those it generates
