@@ -370,7 +370,14 @@ static void pads_start(void) {
 - (void)fitDrawable {
     CAMetalLayer *l = (CAMetalLayer *)self.layer; if (![l isKindOfClass:CAMetalLayer.class] || !self.window) return;
     l.contentsScale = self.window.backingScaleFactor;
-    NSSize px = [self convertSizeToBacking:self.bounds.size]; if (px.width < 1 || px.height < 1 || CGSizeEqualToSize(l.drawableSize, px)) return;
+    NSSize px = [self convertSizeToBacking:self.bounds.size];
+    // The drawable is no taller than the game's 1080-line picture (at most halved): a Retina screen's full pixels (3420x2146 in fullscreen on a MacBook Air) only scale the same picture
+    // up, and presenting and compositing 7.3 million pixels a frame cost Pokémon Pokopia's busy views 49 fps against a locked 60 at 1720x1080 (the window server scales it up).
+    // DM_DRAWABLE_SCALE (0.25-1) sets the fraction instead; 1 keeps every screen pixel
+    { static double ds = -2; if (ds < -1) { const char *e = getenv("DM_DRAWABLE_SCALE"); ds = e ? fmax(0.25, fmin(1, atof(e))) : -1; }
+      double f = ds > 0 ? ds : fmax(0.5, fmin(1, 1080.0 / px.height));
+      if (f < 1) { px.width = round(px.width * f); px.height = round(px.height * f); } }
+    if (px.width < 1 || px.height < 1 || CGSizeEqualToSize(l.drawableSize, px)) return;
     l.drawableSize = px; LOG("front end: drawable %.0fx%.0f", px.width, px.height);
 }
 - (void)setFrameSize:(NSSize)s { [super setFrameSize:s]; [self fitDrawable]; }
@@ -1302,6 +1309,7 @@ void front_run(void (*guest)(void)) {
         g_layer = [CAMetalLayer layer];
         g_layer.device = MTLCreateSystemDefaultDevice();
         g_layer.pixelFormat = MTLPixelFormatBGRA8Unorm;
+        g_layer.opaque = YES;   // the present fills the whole drawable (black bars included): opaque, fullscreen can go straight to the display instead of through the compositor (Metal HUD: "Composited")
         g_layer.contentsScale = win.backingScaleFactor;
         // Apple's HUD over the game (frame rate, frame and GPU time, memory): front_hud_env turns it on before the first device. The layer's developerHUDProperties
         // stay unset: mode=default forces this layer's HUD on, so the Metal HUD menu's Hide HUD left it on screen

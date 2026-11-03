@@ -46,3 +46,8 @@ shader_key_skip	0x20+0x8
 # 72 programs are built at run time from code no game file holds as stored (the language menu among them): each build boots the game once with DM_NVN_SHDUMP
 # and these DM_KEYS steps (English, the intro, the trainer, the character creator, the first area) to capture them from the user's own copy (build_ipa_from_nsp.py capture_shader_dumps)
 shader_dumps_keys	70:A~0.4,73:Up~0.3,75:A~0.4,95:A~0.4*8/4,128:LLeft~0.4,130:A~0.4,134:A~0.4*10/4,176:Plus~0.4,180:A~0.4*10/4,225:LUp~3,230:LLeft~2,236:LUp~3,242:LRight~3,250:X~0.4,256:B~0.4,262:LDown~3,268:LUp~3
+
+# ---- GPU timing ----
+# the game's dynamic resolution measures its GPU time with counter timestamps: with one time per submission it saw none and kept 1920x1080, 40-45 fps behind Tangrowth on an M4
+# MacBook Air; with the segments' own times it lowers the 3D view (1728x972 there) and holds 60
+gpu_timestamps	segment
